@@ -32,5 +32,5 @@ def scrape():
    #go back to the home page
    return redirect('/', code=302)
 
-if __name__ = "__main__":
+if __name__ == "__main__":
     app.run()
