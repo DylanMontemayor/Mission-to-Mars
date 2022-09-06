@@ -17,11 +17,13 @@ def scrape_all():
     # Run all scraping functions and store results in dictionary
     data = {
       "news_title": news_title,
-      "news_paragraph": news_p,
+      "news_paragraph": news_parahraph,
       "featured_image": featured_image(browser),
       "facts": mars_facts(),
-      "last_modified": dt.datetime.now()
+      "last_modified": dt.datetime.now(),
+      "hemispheres": hemispheres()
     }
+
     #we want the automated browser to remain active while we are scraping data
     #then we should turn it down
     browser.quit()
@@ -52,11 +54,11 @@ def mars_news(browser):
         news_title = slide_elem.find('div', class_='content_title').get_text()
     
         # Use the parent element to find the paragraph text
-        news_p = slide_elem.find('div', class_='article_teaser_body').get_text()
+        news_paragraph = slide_elem.find('div', class_='article_teaser_body').get_text()
     except AttributeError:
         return None, None
     
-    return news_title,news_p
+    return news_title,news_paragraph
 # ### Featured Images
 
 def featured_image(browser):
@@ -102,6 +104,47 @@ def mars_facts():
 
     #convert a data frame into html
     return df.to_html(classes="table table-striped")
+
+def hemispheres():
+    #Set up Splinter
+    executable_path = {'executable_path': ChromeDriverManager().install()}
+    browser = Browser('chrome', **executable_path, headless=True)
+    
+    url = 'https://marshemispheres.com/'
+    browser.visit(url)
+
+    # 2. Create a list to hold the images and titles.
+    hemisphere_image_urls = []
+
+    # 3. Write code to retrieve the image urls and titles for each hemisphere.
+    # find the relative image url
+    html = browser.html
+    img_soup = soup(html,'html.parser')
+    complete_links=[]
+    for line in img_soup.find_all('a',class_="itemLink product-item"):
+        h_img_url= f"https://marshemispheres.com/{line.get('href')}"
+        if h_img_url not in complete_links:
+            complete_links.append(h_img_url)
+    complete_links.pop()
+
+    hemisphere_image_urls = []
+    for link in complete_links:
+        browser.visit(link)
+        im_html=browser.html
+        he_img_soup = soup(im_html,'html.parser')
+        he_title=he_img_soup.find('h2', class_='title').get_text()
+        he_img_url_p=he_img_soup.find('a', target="_blank", string='Sample').get('href')
+        he_img_url= f'https://marshemispheres.com/{he_img_url_p}'
+        hemispheres={'img_url': he_img_url, 'title':he_title}
+        hemisphere_image_urls.append(hemispheres)
+        browser.back()
+
+    # 5. Quit the browser
+    browser.quit()
+    # 4. Print the list that holds the dictionary of each image url and title.
+    return hemisphere_image_urls
+
+
 
 #This tells flask that our script is complete and ready for action
 if __name__ == "__main__":
